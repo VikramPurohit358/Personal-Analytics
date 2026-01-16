@@ -348,8 +348,8 @@ function renderTimelineChart(type) {
     ctx.clearRect(0, 0, width, height);
     
     if (filteredActivities.length === 0) {
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = '16px sans-serif';
+        ctx.fillStyle = '#9CA3AF';
+        ctx.font = '14px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('No data available', width / 2, height / 2);
         return;
@@ -378,8 +378,8 @@ function renderTimelineChart(type) {
     const chartHeight = height - padding * 2;
     const stepX = chartWidth / (sortedDates.length - 1 || 1);
     
-    // Draw grid
-    ctx.strokeStyle = '#334155';
+    // Draw grid - Subtle lines
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.15)';
     ctx.lineWidth = 1;
     for (let i = 0; i <= 5; i++) {
         const y = padding + (chartHeight / 5) * i;
@@ -389,13 +389,9 @@ function renderTimelineChart(type) {
         ctx.stroke();
     }
     
-    // Draw line
-    const gradient = ctx.createLinearGradient(0, 0, width, 0);
-    gradient.addColorStop(0, '#2292A4');
-    gradient.addColorStop(0.5, '#BDBF09');
-    gradient.addColorStop(1, '#D96C06');
-    ctx.strokeStyle = gradient;
-    ctx.lineWidth = 3;
+    // Draw line - Single accent color
+    ctx.strokeStyle = '#22D3EE';
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
     
     values.forEach((value, index) => {
@@ -411,17 +407,17 @@ function renderTimelineChart(type) {
     ctx.stroke();
     
     // Draw points
-    ctx.fillStyle = '#2292A4';
+    ctx.fillStyle = '#22D3EE';
     values.forEach((value, index) => {
         const x = padding + stepX * index;
         const y = padding + chartHeight - (value / maxValue) * chartHeight;
         ctx.beginPath();
-        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
         ctx.fill();
     });
     
     // Draw labels
-    ctx.fillStyle = '#cbd5e1';
+    ctx.fillStyle = '#9CA3AF';
     ctx.font = '12px sans-serif';
     ctx.textAlign = 'center';
     
@@ -473,8 +469,8 @@ function renderPieChart(filteredActivities) {
     ctx.clearRect(0, 0, width, height);
     
     if (filteredActivities.length === 0) {
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = '16px sans-serif';
+        ctx.fillStyle = '#9CA3AF';
+        ctx.font = '14px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('No data available', width / 2, height / 2);
         return;
@@ -497,7 +493,17 @@ function renderPieChart(filteredActivities) {
     const centerY = height / 2;
     const radius = Math.min(width, height) / 2 - 40;
     
-    const colors = ['#2292A4', '#BDBF09', '#D96C06', '#2292A4', '#BDBF09', '#D96C06', '#2292A4'];
+    // Single accent color with opacity variations for depth
+    const primaryColor = '#22D3EE';
+    const colors = [
+        'rgba(34, 211, 238, 0.9)',
+        'rgba(34, 211, 238, 0.75)',
+        'rgba(34, 211, 238, 0.6)',
+        'rgba(34, 211, 238, 0.45)',
+        'rgba(34, 211, 238, 0.3)',
+        'rgba(34, 211, 238, 0.9)',
+        'rgba(34, 211, 238, 0.75)'
+    ];
     let currentAngle = -Math.PI / 2;
     
     categories.forEach((category, index) => {
@@ -516,13 +522,14 @@ function renderPieChart(filteredActivities) {
         const labelX = centerX + Math.cos(labelAngle) * (radius * 0.7);
         const labelY = centerY + Math.sin(labelAngle) * (radius * 0.7);
         
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 12px sans-serif';
+        ctx.fillStyle = '#E5E7EB';
+        ctx.font = '600 12px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText(category, labelX, labelY);
         
         // Draw percentage
-        ctx.font = '10px sans-serif';
+        ctx.fillStyle = '#9CA3AF';
+        ctx.font = '11px sans-serif';
         ctx.fillText(`${((values[index] / total) * 100).toFixed(0)}%`, labelX, labelY + 14);
         
         currentAngle += sliceAngle;
@@ -560,8 +567,8 @@ function renderPerformanceChart(type) {
     
     const scoredActivities = filteredActivities.filter(a => a.score !== null);
     if (scoredActivities.length === 0) {
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = '16px sans-serif';
+        ctx.fillStyle = '#9CA3AF';
+        ctx.font = '14px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('No score data available', width / 2, height / 2);
         return;
@@ -600,29 +607,42 @@ function renderPerformanceChart(type) {
     const barWidth = chartWidth / sortedKeys.length * 0.7;
     const stepX = chartWidth / sortedKeys.length;
     
+    // Draw grid lines
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.15)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+        const y = padding + (chartHeight / 5) * i;
+        ctx.beginPath();
+        ctx.moveTo(padding, y);
+        ctx.lineTo(width - padding, y);
+        ctx.stroke();
+    }
+    
     // Draw bars
     averages.forEach((avg, index) => {
         const x = padding + stepX * index + (stepX - barWidth) / 2;
         const barHeight = (avg / maxValue) * chartHeight;
         const y = padding + chartHeight - barHeight;
         
-        const gradient = ctx.createLinearGradient(x, y, x, y + barHeight);
-        gradient.addColorStop(0, '#2292A4');
-        gradient.addColorStop(1, '#BDBF09');
-        
-        ctx.fillStyle = gradient;
+        // Single accent color with opacity
+        ctx.fillStyle = 'rgba(34, 211, 238, 0.85)';
         ctx.fillRect(x, y, barWidth, barHeight);
         
+        // Draw border
+        ctx.strokeStyle = '#22D3EE';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, barWidth, barHeight);
+        
         // Draw value
-        ctx.fillStyle = '#cbd5e1';
-        ctx.font = '11px sans-serif';
+        ctx.fillStyle = '#E5E7EB';
+        ctx.font = '12px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(Math.round(avg), x + barWidth / 2, y - 5);
+        ctx.fillText(Math.round(avg), x + barWidth / 2, y - 6);
     });
     
     // Draw labels
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '10px sans-serif';
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '11px sans-serif';
     ctx.textAlign = 'center';
     sortedKeys.forEach((key, index) => {
         const x = padding + stepX * index + stepX / 2;
@@ -661,8 +681,8 @@ function renderBarChart(filteredActivities) {
     ctx.clearRect(0, 0, width, height);
     
     if (filteredActivities.length === 0) {
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = '16px sans-serif';
+        ctx.fillStyle = '#9CA3AF';
+        ctx.font = '14px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('No data available', width / 2, height / 2);
         return;
@@ -694,16 +714,18 @@ function renderBarChart(filteredActivities) {
         const barHeight = (value / maxValue) * chartHeight;
         const y = padding + chartHeight - barHeight;
         
-        const gradient = ctx.createLinearGradient(x, y, x, y + barHeight);
-        gradient.addColorStop(0, '#BDBF09');
-        gradient.addColorStop(1, '#D96C06');
-        
-        ctx.fillStyle = gradient;
+        // Single accent color with opacity
+        ctx.fillStyle = 'rgba(34, 211, 238, 0.85)';
         ctx.fillRect(x, y, barWidth, barHeight);
         
+        // Draw border
+        ctx.strokeStyle = '#22D3EE';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, barWidth, barHeight);
+        
         // Draw label
-        ctx.fillStyle = '#cbd5e1';
-        ctx.font = '10px sans-serif';
+        ctx.fillStyle = '#9CA3AF';
+        ctx.font = '11px sans-serif';
         ctx.textAlign = 'center';
         ctx.save();
         ctx.translate(x + barWidth / 2, height - padding + 10);
@@ -712,10 +734,10 @@ function renderBarChart(filteredActivities) {
         ctx.restore();
         
         // Draw value
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '11px sans-serif';
+        ctx.fillStyle = '#E5E7EB';
+        ctx.font = '12px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(value.toFixed(1), x + barWidth / 2, y - 5);
+        ctx.fillText(value.toFixed(1), x + barWidth / 2, y - 6);
     });
 }
 
@@ -816,7 +838,7 @@ function renderActivityTable() {
         
         row.innerHTML = `
             <td>${dateStr}</td>
-            <td><span class="category-badge">${activity.category}</span></td>
+            <td><span class="category-badge" data-category="${activity.category}">${activity.category}</span></td>
             <td>${activity.name}</td>
             <td>${activity.duration} hrs</td>
             <td>${scoreBadge}</td>
@@ -828,11 +850,11 @@ function renderActivityTable() {
     });
 }
 
-// Get score class
+// Get score class - Fixed semantic mapping
 function getScoreClass(score) {
-    if (score >= 80) return 'high';
-    if (score >= 60) return 'medium';
-    return 'low';
+    if (score >= 80) return 'high';    // Green for good scores
+    if (score >= 50) return 'medium';   // Orange for medium scores
+    return 'low';                       // Red for low scores
 }
 
 // Delete activity
