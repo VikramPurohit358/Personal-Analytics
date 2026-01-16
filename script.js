@@ -8,7 +8,17 @@ document.addEventListener('DOMContentLoaded', () => {
     loadData();
     setupEventListeners();
     updateDateInput();
+    updateTimeInput();
     renderDashboard();
+    
+    // Handle window resize for mobile orientation changes
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            renderDashboard();
+        }, 250);
+    });
 });
 
 // Load data from localStorage
@@ -94,10 +104,19 @@ function updateDateInput() {
     document.getElementById('activityDate').value = today;
 }
 
+// Update time input to current time
+function updateTimeInput() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('activityTime').value = `${hours}:${minutes}`;
+}
+
 // Open data modal
 function openDataModal() {
     document.getElementById('dataModal').classList.add('active');
     updateDateInput();
+    updateTimeInput();
     updateCategorySelect();
 }
 
@@ -106,6 +125,7 @@ function closeDataModal() {
     document.getElementById('dataModal').classList.remove('active');
     document.getElementById('dataForm').reset();
     updateDateInput();
+    updateTimeInput();
 }
 
 // Update category select
@@ -136,6 +156,7 @@ function handleAddActivity(e) {
     e.preventDefault();
     
     const date = document.getElementById('activityDate').value;
+    const time = document.getElementById('activityTime').value;
     let category = document.getElementById('activityCategory').value;
     const newCategory = document.getElementById('newCategory').value.trim();
     const name = document.getElementById('activityName').value.trim();
@@ -149,14 +170,18 @@ function handleAddActivity(e) {
         category = newCategory;
     }
     
-    if (!category || !name || !duration) {
+    if (!category || !name || !duration || !time) {
         alert('Please fill in all required fields');
         return;
     }
     
+    // Combine date and time
+    const dateTime = new Date(`${date}T${time}`);
+    
     const activity = {
         id: Date.now(),
-        date: new Date(date),
+        date: dateTime,
+        entryTime: time, // Store entry time separately
         category,
         name,
         duration,
@@ -295,21 +320,38 @@ function calculateStreak() {
 // Render timeline chart
 function renderTimelineChart(type) {
     const canvas = document.getElementById('timelineChart');
+    if (!canvas) return;
+    
     const ctx = canvas.getContext('2d');
     const dateRange = document.getElementById('dateRange').value;
     const filteredActivities = getFilteredActivities(dateRange);
     
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
+    // Get device pixel ratio for crisp rendering on mobile
+    const dpr = window.devicePixelRatio || 1;
+    const container = canvas.parentElement;
+    const containerRect = container.getBoundingClientRect();
+    const width = containerRect.width;
+    const height = containerRect.height;
+    
+    // Set canvas CSS size first (this is what the browser uses for layout)
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    
+    // Set actual canvas size (for drawing)
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    
+    // Scale context to handle high DPI displays
+    ctx.scale(dpr, dpr);
     
     // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, width, height);
     
     if (filteredActivities.length === 0) {
         ctx.fillStyle = '#94a3b8';
         ctx.font = '16px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('No data available', canvas.width / 2, canvas.height / 2);
+        ctx.fillText('No data available', width / 2, height / 2);
         return;
     }
     
@@ -331,9 +373,9 @@ function renderTimelineChart(type) {
     );
     
     const maxValue = Math.max(...values, 1);
-    const padding = 60;
-    const chartWidth = canvas.width - padding * 2;
-    const chartHeight = canvas.height - padding * 2;
+    const padding = Math.min(60, width * 0.1); // Responsive padding
+    const chartWidth = width - padding * 2;
+    const chartHeight = height - padding * 2;
     const stepX = chartWidth / (sortedDates.length - 1 || 1);
     
     // Draw grid
@@ -343,12 +385,16 @@ function renderTimelineChart(type) {
         const y = padding + (chartHeight / 5) * i;
         ctx.beginPath();
         ctx.moveTo(padding, y);
-        ctx.lineTo(canvas.width - padding, y);
+        ctx.lineTo(width - padding, y);
         ctx.stroke();
     }
     
     // Draw line
-    ctx.strokeStyle = '#6366f1';
+    const gradient = ctx.createLinearGradient(0, 0, width, 0);
+    gradient.addColorStop(0, '#2292A4');
+    gradient.addColorStop(0.5, '#BDBF09');
+    gradient.addColorStop(1, '#D96C06');
+    ctx.strokeStyle = gradient;
     ctx.lineWidth = 3;
     ctx.beginPath();
     
@@ -365,7 +411,7 @@ function renderTimelineChart(type) {
     ctx.stroke();
     
     // Draw points
-    ctx.fillStyle = '#6366f1';
+    ctx.fillStyle = '#2292A4';
     values.forEach((value, index) => {
         const x = padding + stepX * index;
         const y = padding + chartHeight - (value / maxValue) * chartHeight;
@@ -386,7 +432,7 @@ function renderTimelineChart(type) {
             const x = padding + stepX * index;
             const dateObj = new Date(date);
             const label = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
-            ctx.fillText(label, x, canvas.height - padding + 20);
+            ctx.fillText(label, x, height - padding + 20);
         }
     });
     
@@ -402,18 +448,35 @@ function renderTimelineChart(type) {
 // Render pie chart
 function renderPieChart(filteredActivities) {
     const canvas = document.getElementById('pieChart');
+    if (!canvas) return;
+    
     const ctx = canvas.getContext('2d');
     
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
+    // Get device pixel ratio for crisp rendering on mobile
+    const dpr = window.devicePixelRatio || 1;
+    const container = canvas.parentElement;
+    const containerRect = container.getBoundingClientRect();
+    const width = containerRect.width;
+    const height = containerRect.height;
     
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Set canvas CSS size first
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    
+    // Set actual canvas size
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    
+    // Scale context to handle high DPI displays
+    ctx.scale(dpr, dpr);
+    
+    ctx.clearRect(0, 0, width, height);
     
     if (filteredActivities.length === 0) {
         ctx.fillStyle = '#94a3b8';
         ctx.font = '16px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('No data available', canvas.width / 2, canvas.height / 2);
+        ctx.fillText('No data available', width / 2, height / 2);
         return;
     }
     
@@ -430,11 +493,11 @@ function renderPieChart(filteredActivities) {
     const values = Object.values(categoryData);
     const total = values.reduce((sum, v) => sum + v, 0);
     
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const radius = Math.min(canvas.width, canvas.height) / 2 - 40;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const radius = Math.min(width, height) / 2 - 40;
     
-    const colors = ['#6366f1', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899'];
+    const colors = ['#2292A4', '#BDBF09', '#D96C06', '#2292A4', '#BDBF09', '#D96C06', '#2292A4'];
     let currentAngle = -Math.PI / 2;
     
     categories.forEach((category, index) => {
@@ -469,21 +532,38 @@ function renderPieChart(filteredActivities) {
 // Render performance chart
 function renderPerformanceChart(type) {
     const canvas = document.getElementById('performanceChart');
+    if (!canvas) return;
+    
     const ctx = canvas.getContext('2d');
     const dateRange = document.getElementById('dateRange').value;
     const filteredActivities = getFilteredActivities(dateRange);
     
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
+    // Get device pixel ratio for crisp rendering on mobile
+    const dpr = window.devicePixelRatio || 1;
+    const container = canvas.parentElement;
+    const containerRect = container.getBoundingClientRect();
+    const width = containerRect.width;
+    const height = containerRect.height;
     
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Set canvas CSS size first
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    
+    // Set actual canvas size
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    
+    // Scale context to handle high DPI displays
+    ctx.scale(dpr, dpr);
+    
+    ctx.clearRect(0, 0, width, height);
     
     const scoredActivities = filteredActivities.filter(a => a.score !== null);
     if (scoredActivities.length === 0) {
         ctx.fillStyle = '#94a3b8';
         ctx.font = '16px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('No score data available', canvas.width / 2, canvas.height / 2);
+        ctx.fillText('No score data available', width / 2, height / 2);
         return;
     }
     
@@ -514,9 +594,9 @@ function renderPerformanceChart(type) {
     });
     
     const maxValue = 100;
-    const padding = 50;
-    const chartWidth = canvas.width - padding * 2;
-    const chartHeight = canvas.height - padding * 2;
+    const padding = Math.min(50, width * 0.08);
+    const chartWidth = width - padding * 2;
+    const chartHeight = height - padding * 2;
     const barWidth = chartWidth / sortedKeys.length * 0.7;
     const stepX = chartWidth / sortedKeys.length;
     
@@ -527,8 +607,8 @@ function renderPerformanceChart(type) {
         const y = padding + chartHeight - barHeight;
         
         const gradient = ctx.createLinearGradient(x, y, x, y + barHeight);
-        gradient.addColorStop(0, '#6366f1');
-        gradient.addColorStop(1, '#8b5cf6');
+        gradient.addColorStop(0, '#2292A4');
+        gradient.addColorStop(1, '#BDBF09');
         
         ctx.fillStyle = gradient;
         ctx.fillRect(x, y, barWidth, barHeight);
@@ -549,25 +629,42 @@ function renderPerformanceChart(type) {
         const label = type === 'weekly' 
             ? `W${index + 1}` 
             : new Date(key + '-01').toLocaleDateString('en-US', { month: 'short' });
-        ctx.fillText(label, x, canvas.height - padding + 20);
+        ctx.fillText(label, x, height - padding + 20);
     });
 }
 
 // Render bar chart
 function renderBarChart(filteredActivities) {
     const canvas = document.getElementById('barChart');
+    if (!canvas) return;
+    
     const ctx = canvas.getContext('2d');
     
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
+    // Get device pixel ratio for crisp rendering on mobile
+    const dpr = window.devicePixelRatio || 1;
+    const container = canvas.parentElement;
+    const containerRect = container.getBoundingClientRect();
+    const width = containerRect.width;
+    const height = containerRect.height;
     
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Set canvas CSS size first
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    
+    // Set actual canvas size
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    
+    // Scale context to handle high DPI displays
+    ctx.scale(dpr, dpr);
+    
+    ctx.clearRect(0, 0, width, height);
     
     if (filteredActivities.length === 0) {
         ctx.fillStyle = '#94a3b8';
         ctx.font = '16px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('No data available', canvas.width / 2, canvas.height / 2);
+        ctx.fillText('No data available', width / 2, height / 2);
         return;
     }
     
@@ -586,9 +683,9 @@ function renderBarChart(filteredActivities) {
         .slice(0, 5);
     
     const maxValue = Math.max(...sorted.map(s => s[1]), 1);
-    const padding = 50;
-    const chartWidth = canvas.width - padding * 2;
-    const chartHeight = canvas.height - padding * 2;
+    const padding = Math.min(50, width * 0.08);
+    const chartWidth = width - padding * 2;
+    const chartHeight = height - padding * 2;
     const barWidth = chartWidth / sorted.length * 0.6;
     const stepX = chartWidth / sorted.length;
     
@@ -598,8 +695,8 @@ function renderBarChart(filteredActivities) {
         const y = padding + chartHeight - barHeight;
         
         const gradient = ctx.createLinearGradient(x, y, x, y + barHeight);
-        gradient.addColorStop(0, '#10b981');
-        gradient.addColorStop(1, '#059669');
+        gradient.addColorStop(0, '#BDBF09');
+        gradient.addColorStop(1, '#D96C06');
         
         ctx.fillStyle = gradient;
         ctx.fillRect(x, y, barWidth, barHeight);
@@ -609,7 +706,7 @@ function renderBarChart(filteredActivities) {
         ctx.font = '10px sans-serif';
         ctx.textAlign = 'center';
         ctx.save();
-        ctx.translate(x + barWidth / 2, canvas.height - padding + 10);
+        ctx.translate(x + barWidth / 2, height - padding + 10);
         ctx.rotate(-Math.PI / 4);
         ctx.fillText(name.length > 10 ? name.substring(0, 10) + '...' : name, 0, 0);
         ctx.restore();
@@ -857,15 +954,22 @@ function updateStats(filteredActivities) {
     const bestCategory = Object.entries(categoryHours).sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
     document.getElementById('bestCategory').textContent = bestCategory;
     
-    // Peak hour (simplified - using date hours)
+    // Peak hour - using entry time instead of date hour
     const hourCounts = {};
     filteredActivities.forEach(a => {
-        const hour = a.date.getHours();
+        // Use entryTime if available, otherwise fall back to date hour
+        let hour;
+        if (a.entryTime) {
+            const [hours] = a.entryTime.split(':');
+            hour = parseInt(hours);
+        } else {
+            hour = a.date.getHours();
+        }
         hourCounts[hour] = (hourCounts[hour] || 0) + 1;
     });
     const peakHour = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
     if (peakHour) {
-        const hour = peakHour[0];
+        const hour = parseInt(peakHour[0]);
         const period = hour >= 12 ? 'PM' : 'AM';
         const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
         document.getElementById('peakHour').textContent = `${displayHour}:00 ${period}`;
@@ -889,8 +993,3 @@ function closeGoalModal() {
 // Make functions global for onclick handlers
 window.deleteActivity = deleteActivity;
 window.deleteGoal = deleteGoal;
-
-// Add goal button (if needed in future)
-document.addEventListener('DOMContentLoaded', () => {
-    // Add goal button can be added to UI if needed
-});
