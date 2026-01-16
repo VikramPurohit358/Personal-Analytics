@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard - Personal Metrics Hub</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="header-left">
+                <h1 class="dashboard-title">📊 Analytics Dashboard</h1>
+                <p class="dashboard-subtitle">Your Personal Metrics & Insights Hub</p>
+            </div>
+            <div class="header-right">
+                <div class="date-selector">
+                    <label for="dateRange">Time Period:</label>
+                    <select id="dateRange">
+                        <option value="7">Last 7 Days</option>
+                        <option value="30" selected>Last 30 Days</option>
+                        <option value="90">Last 90 Days</option>
+                        <option value="365">Last Year</option>
+                        <option value="all">All Time</option>
+                    </select>
+                </div>
+                <button class="btn-primary" id="addDataBtn">
+                    <span>+</span> Add Data
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Grid -->
+        <main class="dashboard-main">
+            <!-- Key Metrics Row -->
+            <section class="metrics-row">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-icon">🎯</span>
+                        <span class="metric-label">Goals Completed</span>
+                    </div>
+                    <div class="metric-value" id="goalsCompleted">0</div>
+                    <div class="metric-change positive" id="goalsChange">+0%</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-icon">⏱️</span>
+                        <span class="metric-label">Total Hours Tracked</span>
+                    </div>
+                    <div class="metric-value" id="totalHours">0</div>
+                    <div class="metric-change" id="hoursChange">0 hrs</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-icon">🔥</span>
+                        <span class="metric-label">Active Streak</span>
+                    </div>
+                    <div class="metric-value" id="activeStreak">0</div>
+                    <div class="metric-change" id="streakChange">days</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-icon">📈</span>
+                        <span class="metric-label">Average Score</span>
+                    </div>
+                    <div class="metric-value" id="averageScore">0</div>
+                    <div class="metric-change" id="scoreChange">/100</div>
+                </div>
+            </section>
+
+            <!-- Charts Row 1 -->
+            <section class="charts-row">
+                <div class="chart-card large">
+                    <div class="chart-header">
+                        <h3>Activity Timeline</h3>
+                        <div class="chart-controls">
+                            <button class="chart-btn active" data-chart="timeline" data-type="hours">Hours</button>
+                            <button class="chart-btn" data-chart="timeline" data-type="activities">Activities</button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Category Distribution</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Charts Row 2 -->
+            <section class="charts-row">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Performance Trends</h3>
+                        <div class="chart-controls">
+                            <button class="chart-btn active" data-chart="performance" data-type="weekly">Weekly</button>
+                            <button class="chart-btn" data-chart="performance" data-type="monthly">Monthly</button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Goal Progress</h3>
+                        <button class="btn-secondary" id="addGoalBtn" style="padding: 6px 12px; font-size: 12px;">
+                            <span>+</span> Add Goal
+                        </button>
+                    </div>
+                    <div class="chart-container">
+                        <div class="goals-list" id="goalsList"></div>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Top Activities</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Data Tables Row -->
+            <section class="tables-row">
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>Recent Activity Log</h3>
+                        <div class="table-filters">
+                            <select id="categoryFilter">
+                                <option value="all">All Categories</option>
+                            </select>
+                            <input type="text" id="searchLog" placeholder="Search...">
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Category</th>
+                                    <th>Activity</th>
+                                    <th>Duration</th>
+                                    <th>Score</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activityTableBody">
+                                <tr class="empty-row">
+                                    <td colspan="6">No data yet. Add your first entry!</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Insights Row -->
+            <section class="insights-row">
+                <div class="insight-card">
+                    <div class="insight-header">
+                        <h3>💡 Key Insights</h3>
+                    </div>
+                    <div class="insights-content" id="insightsContent">
+                        <div class="insight-item">
+                            <p>Add data to see personalized insights!</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-header">
+                        <h3>📊 Statistics Summary</h3>
+                    </div>
+                    <div class="stats-grid" id="statsGrid">
+                        <div class="stat-item">
+                            <span class="stat-label">Total Entries</span>
+                            <span class="stat-value" id="totalEntries">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Most Active Day</span>
+                            <span class="stat-value" id="mostActiveDay">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Peak Hour</span>
+                            <span class="stat-value" id="peakHour">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Best Category</span>
+                            <span class="stat-value" id="bestCategory">-</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Add Data Modal -->
+    <div class="modal" id="dataModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Activity</h2>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <form id="dataForm" class="data-form">
+                <div class="form-group">
+                    <label for="activityDate">Date *</label>
+                    <input type="date" id="activityDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="activityCategory">Category *</label>
+                    <select id="activityCategory" required>
+                        <option value="">Select category...</option>
+                        <option value="Work">Work</option>
+                        <option value="Study">Study</option>
+                        <option value="Exercise">Exercise</option>
+                        <option value="Personal">Personal</option>
+                        <option value="Creative">Creative</option>
+                        <option value="Social">Social</option>
+                    </select>
+                    <input type="text" id="newCategory" placeholder="Or add new category" style="margin-top: 8px;">
+                </div>
+                <div class="form-group">
+                    <label for="activityName">Activity Name *</label>
+                    <input type="text" id="activityName" required placeholder="e.g., Project Meeting, Gym Session">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="activityDuration">Duration (hours) *</label>
+                        <input type="number" id="activityDuration" step="0.5" min="0" required placeholder="2.5">
+                    </div>
+                    <div class="form-group">
+                        <label for="activityScore">Performance Score (0-100)</label>
+                        <input type="number" id="activityScore" min="0" max="100" placeholder="85">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="activityNotes">Notes</label>
+                    <textarea id="activityNotes" rows="3" placeholder="Additional details..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="cancelData">Cancel</button>
+                    <button type="submit" class="btn-primary">Add Activity</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Goal Modal -->
+    <div class="modal" id="goalModal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2 id="goalModalTitle">New Goal</h2>
+                <button class="modal-close" id="closeGoalModal">&times;</button>
+            </div>
+            <form id="goalForm" class="data-form">
+                <div class="form-group">
+                    <label for="goalName">Goal Name *</label>
+                    <input type="text" id="goalName" required placeholder="e.g., Complete 100 hours of study">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="goalTarget">Target Value *</label>
+                        <input type="number" id="goalTarget" min="1" required placeholder="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="goalUnit">Unit</label>
+                        <input type="text" id="goalUnit" placeholder="hours" value="hours">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="goalCategory">Category</label>
+                    <select id="goalCategory">
+                        <option value="">All Categories</option>
+                        <option value="Work">Work</option>
+                        <option value="Study">Study</option>
+                        <option value="Exercise">Exercise</option>
+                        <option value="Personal">Personal</option>
+                        <option value="Creative">Creative</option>
+                        <option value="Social">Social</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="cancelGoal">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Goal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
